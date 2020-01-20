@@ -72,18 +72,36 @@ class DownloadYouTubeVideos(QObject):
 		self.filtername = filtername
 		self.parent = parent
 
-	def downloadList(self):
+	def processDownload(self):
+		"""Download video list."""
 		# build list
 		ListItems = self.listFolders()
 		# download video list
 		for ListItem in ListItems:
-			self.downloadVideoYoutube(ListItem)
+			self.processingVideoYoutube(ListItem)
 
 	def listFolders(self):
 		"""Build list folders."""
 		for _, dirs, _ in walk(self.PathDownload):
 			return dirs
-	
+
+	def processingVideoYoutube(self, NameSearch):
+		"""Search and Download video with NemaSearch.""" 
+		NameFinal = path.join(self.PathDownload, NameSearch + '.mp4')
+		if not path.exists(NameFinal):
+			print("Processing Video    : ", NameSearch)
+			# Search youtube obtain first video link
+			print(" --Search YouTube   : ", NameSearch + ' ' + self.filtername)
+			YoutubeVideo = self.searchYoutube(NameSearch)
+			# download video
+			print(" --Download Video   : ", YoutubeVideo)
+			NameVideos = self.downloadYouTubeMP4(YoutubeVideo, self.PathDownload)
+			print(" --Success Download : ", NameVideos)
+			# rename
+			print(" --Rename Video     : ", NameFinal)
+			rename(NameVideos, NameFinal)
+			print(" ** operation successfull ** ")
+
 	def searchYoutube(self, name):
 		"""Search youtube and extract url video."""
 		textToSearch = name + ' ' + self.filtername
@@ -106,30 +124,12 @@ class DownloadYouTubeVideos(QObject):
 			return(namevideos)
 		except: 
 			print('Some error in downloading: ', videourl)
-
-	def downloadVideoYoutube(self, NameSearch):
-		"""Search and Download video with NemaSearch.""" 
-		NameFinal = path.join(self.PathDownload, NameSearch + '.mp4')
-		if not path.exists(NameFinal):
-			print("Processing Video    : ", NameSearch)
-			# Search youtube obtain first video link
-			print(" --Search YouTube   : ", NameSearch)
-			YoutubeVideo = searchYoutube(NameSearch)
-			# download video
-			print(" --Download Video   : ", YoutubeVideo)
-			NameVideos = downloadYouTubeMP4(YoutubeVideo, self.PathDownload)
-			print(" --Success Download : ", NameVideos)
-			# rename
-			print(" --Rename Video     : ", NameFinal)
-			rename(NameVideos,NameFinal)
-			print(" ** operation successfull ** ")
-
-
+			qDebug('-> ERROR : Some error in downloading: ', videourl)
 
 if __name__ == '__main__':
 	app = QApplication(argv)
 	# class
-	processDownload = DownloadYouTubeVideos("D:\\WorkDev\\DownloadYouTube", 'Gameplay PC french')
+	BuuildProcess = DownloadYouTubeVideos("D:\\WorkDev\\DownloadYouTube", 'Gameplay PC french')
 	# download list
-	processDownload.downloadList()
+	BuuildProcess.processDownload()
 
