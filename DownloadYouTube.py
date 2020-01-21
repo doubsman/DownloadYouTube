@@ -71,19 +71,21 @@ class DownloadYouTubeVideos(QObject):
 		self.PathDownload = PathDownload
 		self.filtername = filtername
 		self.parent = parent
+		self.dirs = None
 
 	def processDownload(self):
 		"""Download video list."""
 		# build list
-		ListItems = self.listFolders()
+		self.listFolders()
 		# download video list
-		for ListItem in ListItems:
+		for ListItem in self.dirs:
 			self.processingVideoYoutube(ListItem)
 
 	def listFolders(self):
 		"""Build list folders."""
 		for _, dirs, _ in walk(self.PathDownload):
-			return dirs
+			self.dirs = dirs
+			break
 
 	def processingVideoYoutube(self, NameSearch):
 		"""Search and Download video with NemaSearch.""" 
@@ -102,9 +104,9 @@ class DownloadYouTubeVideos(QObject):
 			rename(NameVideos, NameFinal)
 			print(" ** operation successfull ** ")
 
-	def searchYoutube(self, name):
+	def searchYoutube(self, searchName):
 		"""Search youtube and extract url video."""
-		textToSearch = name + ' ' + self.filtername
+		textToSearch = searchName + ' ' + self.filtername
 		query = parse.quote(textToSearch)
 		url = "https://www.youtube.com/results?search_query=" + query
 		response = request.urlopen(url)
@@ -112,7 +114,9 @@ class DownloadYouTubeVideos(QObject):
 		soup = BeautifulSoup(html, 'html.parser')
 		for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
 			#print('https://www.youtube.com' + vid['href'])
-			return 'https://www.youtube.com' + vid['href']
+			urlfind = 'https://www.youtube.com' + vid['href']
+			break
+		return urlfind
 
 	def downloadYouTubeMP4(self, videourl):
 		"""Download url youtube to file."""
