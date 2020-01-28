@@ -1,79 +1,28 @@
-from pytube import YouTube
-from os import walk, rename, path
 from sys import argv
-from urllib import request, parse
+from os import path, startfile
+from urllib.request import Request, urlopen
+from urllib import parse
+from codecs import open
+from pytube import YouTube
 from bs4 import BeautifulSoup
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QObject, qDebug
+from PyQt5.QtCore import QObject, qDebug, QDateTime
 
 
-# Fonctions mode run main("D:\\WorkDev\\DownloadYouTube")
-def listFolders(PathDownload):
-	"""Build list folders."""
-	for _, dirs, _ in walk(PathDownload):
-		return dirs
-
-def searchYoutube(name):
-	"""Search youtube and extract url video."""
-	textToSearch = name + ' Gameplay PC french'
-	query = parse.quote(textToSearch)
-	url = "https://www.youtube.com/results?search_query=" + query
-	response = request.urlopen(url)
-	html = response.read()
-	soup = BeautifulSoup(html, 'html.parser')
-	for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-		#print('https://www.youtube.com' + vid['href'])
-		return 'https://www.youtube.com' + vid['href']
-
-def downloadYouTubeMP4(videourl, PathDownload):
-	"""Download url youtube to file."""
-	yt = YouTube(videourl)
-	namevideos = path.join(PathDownload, yt.title + ".mp4")
-	youstreams = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
-	try: 
-		youstreams.download(PathDownload)
-		return(namevideos)
-	except: 
-		print('-> ERROR : Some error in downloading: ', videourl)
-		qDebug('-> ERROR : Some error in downloading: ', videourl)
-
-def downloadVideoYoutube(NameSearch, PathDownload):
-	"""Search and Download video with NemaSearch.""" 
-	NameFinal = path.join(PathDownload, NameSearch + '.mp4')
-	if not path.exists(NameFinal):
-		print("Processing Video    : ", NameSearch)
-		# Search youtube obtain first video link
-		print(" --Search YouTube   : ", NameSearch)
-		YoutubeVideo = searchYoutube(NameSearch)
-		# download video
-		print(" --Download Video   : ", YoutubeVideo)
-		NameVideos = downloadYouTubeMP4(YoutubeVideo,PathDownload)
-		print(" --Success Download : ", NameVideos)
-		# rename
-		print(" --Rename Video     : ", NameFinal)
-		rename(NameVideos,NameFinal)
-		print(" ** operation successfull ** ")
-
-def main(PathDownload):
-	# build list
-	ListItems = listFolders(PathDownload)
-	# download video list
-	for ListItem in ListItems:
-		downloadVideoYoutube(ListItem, PathDownload)
-
-
-class DownloadYouTubeVideos(QObject):
-	"""build list folders name, search youtube and download first video find format mp4."""
+class YouTubeVideosDownload(QObject):
+	"""build list games name IGG-GAME."""
 						
-	def __init__(self, PathDownload, filtername, parent=None):
+	def __init__(self, PathDownload = '', filtername = '', parent=None):
 		"""Init."""
-		super(DownloadYouTubeVideos, self).__init__(parent)
-		self.PathDownload = PathDownload
-		self.filtername = filtername
+		super(YouTubeVideosDownload, self).__init__(parent)
 		self.parent = parent
-		self.dirs = None
+		self.listgames = []
+		self.filtername = filtername
+		self.PathDownload = PathDownload
+		self.logFileName = QDateTime.currentDateTime().toString('yyMMddhhmmss') + "_IGGGames.log"
+		self.logFileName = path.join(path.dirname(path.abspath(__file__)), "LOG", self.logFileName)
 
-	def processDownload(self):
+	def process_download_youtube_gamevideos(self):
 		"""Download video list."""
 		# build list
 		self.listFolders()
@@ -81,42 +30,49 @@ class DownloadYouTubeVideos(QObject):
 		for ListItem in self.dirs:
 			self.processingVideoYoutube(ListItem)
 
+	def process_download_youtube_gameIGG(self, download = False):
+		"""Search youtube and extract url video."""
+		self.write_log_file('GAME IGG', '', False)
+		soup = self.get_webhtml("https://igg-games.com/")
+		for vid in soup.findAll(attrs={'class':'wk-display-block wk-link-reset'}):
+			game  = vid.img['alt'].replace(' Free Download','')
+			self.listgames.append(game)
+			self.processingVideoYoutube(game, download)
+			self.write_log_file('-'*22, '', False)
+		startfile(self.logFileName)
+
+	def processingVideoYoutube(self, NameSearch, download = True):
+		"""Search and Download video with NemaSearch.""" 
+		self.write_log_file('Processing Video', NameSearch)
+		# Search youtube obtain first video link
+		self.write_log_file('Search YouTube', NameSearch + ' ' + self.filtername)
+		YoutubeVideo = self.searchYoutube(NameSearch)
+		self.write_log_file('url YouTube', YoutubeVideo)
+		if download:
+			NameFinal = path.join(self.PathDownload, NameSearch + '.mp4')
+			if not path.exists(NameFinal):
+				# download video
+				self.write_log_file('Download Video', YoutubeVideo)
+				NameVideos = self.downloadYouTubeMP4(YoutubeVideo, self.PathDownload)
+				self.write_log_file('Success Download', NameVideos)
+				# rename
+				self.write_log_file('Rename Video', NameFinal)
+				rename(NameVideos, NameFinal)
+
 	def listFolders(self):
 		"""Build list folders."""
 		for _, dirs, _ in walk(self.PathDownload):
 			self.dirs = dirs
 			break
 
-	def processingVideoYoutube(self, NameSearch):
-		"""Search and Download video with NemaSearch.""" 
-		NameFinal = path.join(self.PathDownload, NameSearch + '.mp4')
-		if not path.exists(NameFinal):
-			print("Processing Video    : ", NameSearch)
-			# Search youtube obtain first video link
-			print(" --Search YouTube   : ", NameSearch + ' ' + self.filtername)
-			YoutubeVideo = self.searchYoutube(NameSearch)
-			# download video
-			print(" --Download Video   : ", YoutubeVideo)
-			NameVideos = self.downloadYouTubeMP4(YoutubeVideo, self.PathDownload)
-			print(" --Success Download : ", NameVideos)
-			# rename
-			print(" --Rename Video     : ", NameFinal)
-			rename(NameVideos, NameFinal)
-			print(" ** operation successfull ** ")
-
 	def searchYoutube(self, searchName):
 		"""Search youtube and extract url video."""
 		textToSearch = searchName + ' ' + self.filtername
-		query = parse.quote(textToSearch)
-		url = "https://www.youtube.com/results?search_query=" + query
-		response = request.urlopen(url)
-		html = response.read()
-		soup = BeautifulSoup(html, 'html.parser')
+		soup = self.get_webhtml("https://www.youtube.com/results?search_query=", textToSearch)
 		for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
 			#print('https://www.youtube.com' + vid['href'])
-			urlfind = 'https://www.youtube.com' + vid['href']
 			break
-		return urlfind
+		return 'https://www.youtube.com' + vid['href']
 
 	def downloadYouTubeMP4(self, videourl):
 		"""Download url youtube to file."""
@@ -127,13 +83,40 @@ class DownloadYouTubeVideos(QObject):
 			youstreams.download(self.PathDownload)
 			return(namevideos)
 		except: 
-			print('Some error in downloading: ', videourl)
+			self.write_log_file('Some error in downloading: ', videourl)
 			qDebug('-> ERROR : Some error in downloading: ', videourl)
+
+	def get_webhtml(self, url, query = None):
+		"""Product soup dict from web url."""
+		if query:
+			query = parse.quote(query)
+			url += query
+		req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+		webpage = urlopen(req).read()
+		soup = BeautifulSoup(webpage, 'html.parser')
+		return soup
+
+	def write_log_file(self, operation, line, modification = True, writeconsole = True):
+		"""Write log file."""
+		if modification:
+			logline = '{:>22} : {}  '.format(operation, line)
+		else:
+			if line == "":
+				logline = operation + "\n"
+			else:
+				logline = '{} "{}"'.format(operation, line)
+		text_file = open(self.logFileName, "a", 'utf-8')
+		text_file.write(logline+"\n")
+		text_file.close()
+		if writeconsole:
+			print(logline)
 
 if __name__ == '__main__':
 	app = QApplication(argv)
-	# class
-	BuuildProcess = DownloadYouTubeVideos("D:\\WorkDev\\DownloadYouTube", 'Gameplay PC french')
-	# download list
-	BuuildProcess.processDownload()
+	# download list folders
+	#BuildProcess = YouTubeVideosDownload("E:\\Download", 'Gameplay PC french')
+	#BuildProcess.process_download_youtube_gamevideos()
+	# search url video youtube
+	BuildProcess = YouTubeVideosDownload()
+	BuildProcess.process_download_youtube_gameIGG()
 
