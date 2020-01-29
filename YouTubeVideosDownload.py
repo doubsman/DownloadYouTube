@@ -1,18 +1,16 @@
-from sys import argv
 from os import path, startfile
 from urllib.request import Request, urlopen
 from urllib import parse
 from codecs import open
 from pytube import YouTube
 from bs4 import BeautifulSoup
-from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QObject, qDebug, QDateTime
 
 
 class YouTubeVideosDownload(QObject):
 	"""build list games name IGG-GAME."""
 						
-	def __init__(self, PathDownload = '', filtername = '', parent=None):
+	def __init__(self, filtername = '', PathDownload = '',  parent=None):
 		"""Init."""
 		super(YouTubeVideosDownload, self).__init__(parent)
 		self.parent = parent
@@ -41,7 +39,7 @@ class YouTubeVideosDownload(QObject):
 			self.write_log_file('-'*22, '', False)
 		startfile(self.logFileName)
 
-	def processingVideoYoutube(self, NameSearch, download = True):
+	def processingVideoYoutube(self, NameSearch, download = False):
 		"""Search and Download video with NemaSearch.""" 
 		self.write_log_file('Processing Video', NameSearch)
 		# Search youtube obtain first video link
@@ -111,12 +109,4 @@ class YouTubeVideosDownload(QObject):
 		if writeconsole:
 			print(logline)
 
-if __name__ == '__main__':
-	app = QApplication(argv)
-	# download list folders
-	#BuildProcess = YouTubeVideosDownload("E:\\Download", 'Gameplay PC french')
-	#BuildProcess.process_download_youtube_gamevideos()
-	# search url video youtube
-	BuildProcess = YouTubeVideosDownload()
-	BuildProcess.process_download_youtube_gameIGG()
 

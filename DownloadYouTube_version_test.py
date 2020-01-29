@@ -133,7 +133,7 @@ class DownloadYouTubeVideos(QObject):
 if __name__ == '__main__':
 	app = QApplication(argv)
 	# class
-	BuuildProcess = DownloadYouTubeVideos("D:\\WorkDev\\DownloadYouTube", 'Gameplay PC french')
+	BuuildProcess = DownloadYouTubeVideos(r'D:\WorkDev\DownloadYouTube', 'Gameplay PC french')
 	# download list
 	BuuildProcess.processDownload()
 
