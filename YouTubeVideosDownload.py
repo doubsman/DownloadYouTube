@@ -1,4 +1,4 @@
-from os import path, startfile
+from os import walk, rename, path, startfile
 from urllib.request import Request, urlopen
 from urllib import parse
 from codecs import open
