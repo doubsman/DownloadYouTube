@@ -1,24 +1,27 @@
-from os import walk, rename, path, startfile
+
+from os import walk, rename, path
+from sys import path as syspath
 from urllib.request import Request, urlopen
 from urllib import parse
 from codecs import open
 from pytube import YouTube
 from bs4 import BeautifulSoup
 from PyQt5.QtCore import QObject, qDebug, QDateTime
-
+# log
+syspath.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from LogPrintFile.LogPrintFile import LogPrintFile
 
 class YouTubeVideosDownload(QObject):
-	"""build list games name IGG-GAME."""
+	"""Youtube list download."""
 						
-	def __init__(self, filtername = '', PathDownload = '',  parent=None):
+	def __init__(self, logname = 'TEST', filtername = '', PathDownload = '',  parent=None):
 		"""Init."""
 		super(YouTubeVideosDownload, self).__init__(parent)
 		self.parent = parent
 		self.listgames = []
 		self.filtername = filtername
 		self.PathDownload = PathDownload
-		self.logFileName = QDateTime.currentDateTime().toString('yyMMddhhmmss') + "_IGGGames.log"
-		self.logFileName = path.join(path.dirname(path.abspath(__file__)), "LOG", self.logFileName)
+		self.logProcess = LogPrintFile(path.join(path.dirname(path.abspath(__file__)), 'LOG'), logname, True, 7)
 
 	def process_download_youtube_gamevideos(self):
 		"""Download video list."""
@@ -30,31 +33,31 @@ class YouTubeVideosDownload(QObject):
 
 	def process_download_youtube_gameIGG(self, download = False):
 		"""Search youtube and extract url video."""
-		self.write_log_file('GAME IGG', '', False)
+		self.logProcess.write_log_file('GAME IGG', '', False)
 		soup = self.get_webhtml("https://igg-games.com/")
 		for vid in soup.findAll(attrs={'class':'wk-display-block wk-link-reset'}):
 			game  = vid.img['alt'].replace(' Free Download','')
 			self.listgames.append(game)
 			self.processingVideoYoutube(game, download)
-			self.write_log_file('-'*22, '', False)
-		startfile(self.logFileName)
+			self.logProcess.write_log_file('-'*22, '', False)
+		self.logProcess.view_log_file()
 
 	def processingVideoYoutube(self, NameSearch, download = False):
 		"""Search and Download video with NemaSearch.""" 
-		self.write_log_file('Processing Video', NameSearch)
+		self.logProcess.write_log_file('Processing Video', NameSearch)
 		# Search youtube obtain first video link
-		self.write_log_file('Search YouTube', NameSearch + ' ' + self.filtername)
+		self.logProcess.write_log_file('Search YouTube', NameSearch + ' ' + self.filtername)
 		YoutubeVideo = self.searchYoutube(NameSearch)
-		self.write_log_file('url YouTube', YoutubeVideo)
+		self.logProcess.write_log_file('url YouTube', YoutubeVideo)
 		if download:
 			NameFinal = path.join(self.PathDownload, NameSearch + '.mp4')
 			if not path.exists(NameFinal):
 				# download video
-				self.write_log_file('Download Video', YoutubeVideo)
+				self.logProcess.write_log_file('Download Video', YoutubeVideo)
 				NameVideos = self.downloadYouTubeMP4(YoutubeVideo, self.PathDownload)
-				self.write_log_file('Success Download', NameVideos)
+				self.logProcess.write_log_file('Success Download', NameVideos)
 				# rename
-				self.write_log_file('Rename Video', NameFinal)
+				self.logProcess.write_log_file('Rename Video', NameFinal)
 				rename(NameVideos, NameFinal)
 
 	def listFolders(self):
@@ -81,7 +84,7 @@ class YouTubeVideosDownload(QObject):
 			youstreams.download(self.PathDownload)
 			return(namevideos)
 		except: 
-			self.write_log_file('Some error in downloading: ', videourl)
+			self.logProcess.write_log_file('Some error in downloading: ', videourl)
 			qDebug('-> ERROR : Some error in downloading: ', videourl)
 
 	def get_webhtml(self, url, query = None):
@@ -94,19 +97,5 @@ class YouTubeVideosDownload(QObject):
 		soup = BeautifulSoup(webpage, 'html.parser')
 		return soup
 
-	def write_log_file(self, operation, line, modification = True, writeconsole = True):
-		"""Write log file."""
-		if modification:
-			logline = '{:>22} : {}  '.format(operation, line)
-		else:
-			if line == "":
-				logline = operation + "\n"
-			else:
-				logline = '{} "{}"'.format(operation, line)
-		text_file = open(self.logFileName, "a", 'utf-8')
-		text_file.write(logline+"\n")
-		text_file.close()
-		if writeconsole:
-			print(logline)
 
 
