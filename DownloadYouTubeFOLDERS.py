@@ -14,6 +14,6 @@ if __name__ == '__main__':
 		myfilter = 'Gameplay PC french'
 		logname = 'IGGGames_TEST'
 	# init list folders
-	BuildProcess = YouTubeVideosDownload(logname, myfilter, r'E:\Download')
+	BuildProcess = YouTubeVideosDownload(r'D:\WorkDev\DownloadYouTube', logname, myfilter)
 	# processing download
 	BuildProcess.process_download_youtube_gamevideos(True)

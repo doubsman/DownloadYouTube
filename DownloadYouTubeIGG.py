@@ -14,7 +14,7 @@ if __name__ == '__main__':
 		myfilter = 'Gameplay'
 		logname = 'IGGGames_TEST'
 	# init class
-	BuildProcess = YouTubeVideosDownload(logname, myfilter)
+	BuildProcess = YouTubeVideosDownload(None, logname, myfilter)
 	# no download
 	BuildProcess.process_download_youtube_gameIGG(False)
 
